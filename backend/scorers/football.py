@@ -112,7 +112,7 @@ def score_football_window(
     
     excitement_keywords = {
         "goal", "gol", "score", "yes", "wow", "amazing", "incredible",
-        "penalty", "corner", "free kick", "shot", "save", "miss"
+        "penalty", "corner", "free", "kick", "shot", "save", "miss"
     }
     keyword_hits = sorted(set(words).intersection(excitement_keywords))
     if keyword_hits:
@@ -143,7 +143,7 @@ def build_football_candidates(
     
     for peak_time in excitement_peaks:
         clip_start = max(0, peak_time - lookback_seconds)
-        clip_end = peak_time + 5.0
+        clip_end = peak_time + 15.0
         
         duration = clip_end - clip_start
         if duration < min_duration or duration > max_duration:

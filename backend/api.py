@@ -38,10 +38,12 @@ class ClipJobRequest(BaseModel):
     min_duration: float = Field(default=35, ge=5, le=600)
     max_duration: float = Field(default=180, ge=10, le=600)
     model: str = "Systran/faster-whisper-small"
-    language: str = "id"
+    language: str = "en"
     analyze_seconds: float | None = Field(default=None, ge=10, le=7200)
     burn_subtitles: bool = True
-    crop_mode: Literal["center", "person"] = "center"
+    crop_mode: Literal["center", "person", "letterbox"] = "center"
+    content_type: Literal["podcast", "football", "gaming"] = "podcast"
+    use_llm: bool = False
 
 
 class ClipCandidate(BaseModel):
@@ -249,6 +251,9 @@ def build_clipper_command(request: ClipJobRequest) -> list[str]:
     if not request.burn_subtitles:
         command.append("--no-burn-subtitles")
     command.extend(["--crop-mode", request.crop_mode])
+    command.extend(["--content-type", request.content_type])
+    if request.use_llm:
+        command.append("--use-llm")
     return command
 
 

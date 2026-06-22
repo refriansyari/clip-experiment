@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { createJob, deleteJobs, getJob, getJobs } from "../lib/apiClient";
 import {
+  DEFAULT_CONTENT_TYPE,
   DEFAULT_LANGUAGE,
   DEFAULT_MAX_DURATION,
   DEFAULT_MIN_DURATION,
@@ -12,7 +13,7 @@ import {
   RECENT_LOG_LIMIT,
 } from "../lib/constants";
 import { isActiveJob } from "../lib/utils";
-import type { ClipJob, CropMode } from "../types/clip.type";
+import type { ClipJob, ContentType, CropMode } from "../types/clip.type";
 import { ControlPanel } from "./_components/ControlPanel";
 import { DeleteAllToast } from "./_components/DeleteAllToast";
 import { HistorySection } from "./_components/HistorySection";
@@ -26,6 +27,8 @@ export default function HomePage() {
   const [minDuration, setMinDuration] = useState(DEFAULT_MIN_DURATION);
   const [maxDuration, setMaxDuration] = useState(DEFAULT_MAX_DURATION);
   const [cropMode, setCropMode] = useState<CropMode>("person");
+  const [contentType, setContentType] = useState<ContentType>(DEFAULT_CONTENT_TYPE);
+  const [useLlm, setUseLlm] = useState(false);
   const [job, setJob] = useState<ClipJob | null>(null);
   const [jobs, setJobs] = useState<ClipJob[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,7 +66,7 @@ export default function HomePage() {
     setError("");
 
     if (!trimmedUrl) {
-      setError("Link YouTube tidak boleh kosong.");
+      setError("YouTube URL is required.");
       return;
     }
 
@@ -79,28 +82,30 @@ export default function HomePage() {
           language: DEFAULT_LANGUAGE,
           burn_subtitles: true,
           crop_mode: cropMode,
+          content_type: contentType,
+          use_llm: useLlm,
         }),
         {
-          loading: "Mempersiapkan proses pemotongan...",
-          success: "Proses pemotongan berhasil dimulai!",
-          error: "Gagal memulai proses pemotongan",
+          loading: "Preparing clip job...",
+          success: "Clipping started!",
+          error: "Failed to start clipping",
         },
       );
 
       setJob(nextJob);
       await loadJobs();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Gagal memulai proses.");
+      setError(submitError instanceof Error ? submitError.message : "Failed to start job.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [cropMode, loadJobs, maxDuration, minDuration, url]);
+  }, [contentType, cropMode, loadJobs, maxDuration, minDuration, url, useLlm]);
 
   const handleDeleteAllConfirmed = useCallback(async () => {
     await toast.promise(deleteJobs(), {
-      loading: "Menghapus riwayat...",
-      success: "Seluruh riwayat berhasil dihapus!",
-      error: "Gagal menghapus riwayat",
+      loading: "Deleting history...",
+      success: "All history deleted!",
+      error: "Failed to delete history",
     });
 
     setJob(null);
@@ -119,18 +124,22 @@ export default function HomePage() {
 
       <section className="workspace">
         <ControlPanel
+          contentType={contentType}
           cropMode={cropMode}
           error={error}
           isBusy={isBusy}
           isSubmitting={isSubmitting}
           maxDuration={maxDuration}
           minDuration={minDuration}
+          onContentTypeChange={setContentType}
           onCropModeChange={setCropMode}
           onMaxDurationChange={setMaxDuration}
           onMinDurationChange={setMinDuration}
           onStartJob={handleStartJob}
           onUrlChange={setUrl}
+          onUseLlmChange={setUseLlm}
           url={url}
+          useLlm={useLlm}
         />
         <StatusPanel job={job} latestLogs={latestLogs} />
       </section>

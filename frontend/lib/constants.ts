@@ -4,7 +4,8 @@ import type { JobStatus } from "../types/clip.type";
 export const DEFAULT_MIN_DURATION = 35;
 export const DEFAULT_MAX_DURATION = 180;
 export const DEFAULT_MODEL = "Systran/faster-whisper-small";
-export const DEFAULT_LANGUAGE = "id";
+export const DEFAULT_LANGUAGE = "en";
+export const DEFAULT_CONTENT_TYPE = "podcast" as const;
 export const JOB_POLL_INTERVAL_MS = 2200;
 export const RECENT_LOG_LIMIT = 10;
 

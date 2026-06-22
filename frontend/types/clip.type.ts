@@ -1,5 +1,6 @@
 export type JobStatus = "queued" | "running" | "completed" | "failed";
-export type CropMode = "center" | "person";
+export type CropMode = "center" | "person" | "letterbox";
+export type ContentType = "podcast" | "football" | "gaming";
 
 export type ClipFile = {
   name: string;
@@ -37,6 +38,8 @@ export type ClipJob = {
     analyze_seconds: number | null;
     burn_subtitles: boolean;
     crop_mode: CropMode;
+    content_type: ContentType;
+    use_llm: boolean;
   };
 };
 
@@ -50,4 +53,6 @@ export type CreateClipJobInput = {
   analyze_seconds?: number | null;
   burn_subtitles: boolean;
   crop_mode: CropMode;
+  content_type: ContentType;
+  use_llm: boolean;
 };

@@ -251,6 +251,8 @@ def detect_person_focus_x(video_path: Path, clip: ClipCandidate) -> tuple[float,
 
 def vertical_crop_filter(video_path: Path, clip: ClipCandidate, crop_mode: CropMode) -> str:
     center_filter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1"
+    if crop_mode == "letterbox":
+        return "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,setsar=1"
     if crop_mode == "center":
         return center_filter
 
@@ -315,9 +317,9 @@ def download_video(url: str, work_dir: Path, force: bool = False) -> tuple[Path,
 
     ydl_opts = {
         "format": (
-            "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/"
-            "bestvideo[height<=1080]+bestaudio/"
-            "best[height<=1080]/best"
+            "bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]/"
+            "bestvideo[height<=2160]+bestaudio/"
+            "best[height<=2160]/best"
         ),
         "outtmpl": str(work_dir / "source.%(ext)s"),
         "merge_output_format": "mp4",
@@ -747,6 +749,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Local YouTube auto clipper for short vertical videos.")
     parser.add_argument("url", help="YouTube URL")
     parser.add_argument("--content-type", choices=["podcast", "football", "gaming"], default="podcast", help="Content type for scoring algorithm")
+    parser.add_argument("--use-llm", action="store_true", help="Use Claude Haiku for clip scoring instead of heuristics (requires ANTHROPIC_API_KEY)")
     parser.add_argument("--top", type=int, default=5, help="Number of clips to export")
     parser.add_argument("--min", type=float, default=35, help="Minimum clip duration in seconds")
     parser.add_argument("--max", type=float, default=180, help="Maximum clip duration in seconds")
@@ -759,9 +762,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-burn-subtitles", action="store_true", help="Create SRT files but do not burn subtitles into MP4")
     parser.add_argument(
         "--crop-mode",
-        choices=["center", "person"],
+        choices=["center", "person", "letterbox"],
         default="center",
-        help="Use center crop or shift the vertical crop toward a detected person",
+        help="center: crop to fill 9:16 | person: crop toward detected person | letterbox: fit original aspect ratio with black bars",
     )
     parser.add_argument("--force", action="store_true", help="Redo download, audio extraction, and transcription")
     return parser.parse_args()
@@ -803,15 +806,28 @@ def main() -> int:
     )
 
     console.print("[bold]Scoring candidate clips...[/bold]")
-    
+
+    excitement_peaks: list[float] = []
     if args.content_type == "football":
-        from scorers.football import analyze_audio_energy, detect_excitement_peaks, build_football_candidates
-        
+        from scorers.football import analyze_audio_energy, detect_excitement_peaks
         console.print("[bold]Analyzing audio energy for excitement peaks...[/bold]")
         energy_timeline = analyze_audio_energy(audio_path)
         excitement_peaks = detect_excitement_peaks(energy_timeline)
         console.print(f"[green]Detected {len(excitement_peaks)} excitement peaks[/green]")
-        
+
+    if args.use_llm:
+        import os
+        if not os.environ.get("OPENROUTER_API_KEY"):
+            console.print("[red]--use-llm requires OPENROUTER_API_KEY to be set[/red]")
+            return 1
+        from scorers.llm import score_with_llm
+        console.print(f"[bold]Scoring with Claude Haiku ({args.content_type})...[/bold]")
+        candidates = score_with_llm(
+            transcript, args.content_type, args.min, args.max, args.top,
+            excitement_peaks=excitement_peaks or None,
+        )
+    elif args.content_type == "football":
+        from scorers.football import build_football_candidates
         candidates = build_football_candidates(transcript, excitement_peaks, args.min, args.max, args.top)
     else:
         candidates = build_candidates(transcript, args.min, args.max, args.top)

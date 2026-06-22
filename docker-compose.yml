@@ -5,6 +5,9 @@ services:
     container_name: clipforge-backend
     ports:
       - "${BACKEND_PORT:-8010}:8010"
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-meta-llama/llama-3.1-8b-instruct:free}
     volumes:
       - ./backend/outputs:/app/outputs
       - ./backend/data:/app/data
