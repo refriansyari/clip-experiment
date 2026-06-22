@@ -67,7 +67,7 @@ def score_with_llm(
         api_key=os.environ["OPENROUTER_API_KEY"],
         base_url="https://openrouter.ai/api/v1",
     )
-    model = os.environ.get("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct:free")
+    model = os.environ.get("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
 
     transcript_text = "\n".join(
         f"[{seg.start:.1f}s] {seg.text}" for seg in segments

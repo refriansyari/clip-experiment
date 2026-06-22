@@ -749,7 +749,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Local YouTube auto clipper for short vertical videos.")
     parser.add_argument("url", help="YouTube URL")
     parser.add_argument("--content-type", choices=["podcast", "football", "gaming"], default="podcast", help="Content type for scoring algorithm")
-    parser.add_argument("--use-llm", action="store_true", help="Use Claude Haiku for clip scoring instead of heuristics (requires ANTHROPIC_API_KEY)")
+    parser.add_argument("--use-llm", action="store_true", help="Use an OpenRouter LLM (OPENROUTER_MODEL) for clip scoring instead of heuristics (requires OPENROUTER_API_KEY)")
     parser.add_argument("--top", type=int, default=5, help="Number of clips to export")
     parser.add_argument("--min", type=float, default=35, help="Minimum clip duration in seconds")
     parser.add_argument("--max", type=float, default=180, help="Maximum clip duration in seconds")
@@ -821,7 +821,8 @@ def main() -> int:
             console.print("[red]--use-llm requires OPENROUTER_API_KEY to be set[/red]")
             return 1
         from scorers.llm import score_with_llm
-        console.print(f"[bold]Scoring with Claude Haiku ({args.content_type})...[/bold]")
+        model_name = os.environ.get("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
+        console.print(f"[bold]Scoring with {model_name} ({args.content_type})...[/bold]")
         candidates = score_with_llm(
             transcript, args.content_type, args.min, args.max, args.top,
             excitement_peaks=excitement_peaks or None,
@@ -865,7 +866,7 @@ def main() -> int:
                 candidate,
                 clip_segments,
                 clips_dir,
-                not args.no_burn_subtitles,
+                not args.no_burn_subtitles and args.content_type != "football",
                 args.crop_mode,
             )
         )
