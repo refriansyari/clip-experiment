@@ -8,4 +8,4 @@ rich==15.0.0
 scipy==1.13.0
 opencv-python>=4.10.0
 uvicorn==0.38.0
-yt-dlp==2026.6.9
+yt-dlp
