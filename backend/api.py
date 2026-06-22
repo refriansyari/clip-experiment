@@ -22,7 +22,8 @@ from yt_dlp import YoutubeDL
 
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUTS_DIR = BASE_DIR / "outputs"
-JOBS_PATH = BASE_DIR / "jobs.json"
+DATA_DIR = BASE_DIR / "data"
+JOBS_PATH = DATA_DIR / "jobs.json"
 SECONDS_PER_TARGET_CLIP = 360
 MIN_AUTO_CLIPS = 2
 MAX_AUTO_CLIPS = 8
@@ -82,6 +83,7 @@ app.add_middleware(
 )
 
 OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/outputs", StaticFiles(directory=OUTPUTS_DIR), name="outputs")
 
 def now_iso() -> str:

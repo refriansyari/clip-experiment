@@ -608,9 +608,9 @@ def export_clip(
     vf = vertical_crop_filter(video_path, clip, crop_mode)
     if burn_subtitles and clip_segments:
         style = (
-            "FontName=Arial,FontSize=5,PrimaryColour=&H00FFFFFF,"
-            "OutlineColour=&H00000000,BorderStyle=1,Outline=0.6,Shadow=0,"
-            "Alignment=2,MarginV=42"
+            "FontName=DejaVu Sans,FontSize=10,PrimaryColour=&H00FFFFFF,"
+            "OutlineColour=&H00000000,BorderStyle=1,Outline=1.2,Shadow=0,"
+            "Alignment=2,MarginV=60"
         )
         vf = f"{vf},subtitles='{srt_path.name}':force_style='{style}'"
 
