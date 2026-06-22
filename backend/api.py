@@ -10,7 +10,7 @@ import uuid
 from math import ceil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional, Union
 from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException
@@ -34,12 +34,12 @@ MAX_AUTO_ANALYSIS_SECONDS = 60 * 60
 
 class ClipJobRequest(BaseModel):
     url: str = Field(min_length=8)
-    top: int | None = Field(default=None, ge=1, le=12)
+    top: Optional[int] = Field(default=None, ge=1, le=12)
     min_duration: float = Field(default=35, ge=5, le=600)
     max_duration: float = Field(default=180, ge=10, le=600)
     model: str = "Systran/faster-whisper-small"
     language: str = "id"
-    analyze_seconds: float | None = Field(default=None, ge=10, le=7200)
+    analyze_seconds: Optional[float] = Field(default=None, ge=10, le=7200)
     burn_subtitles: bool = True
     crop_mode: Literal["center", "person"] = "center"
 
@@ -70,7 +70,7 @@ class ClipJob(BaseModel):
     logs: list[str] = []
     clips: list[ClipFile] = []
     candidates: list[ClipCandidate] = []
-    error: str | None = None
+    error: Optional[str] = None
 
 
 app = FastAPI(title="ClipForge API", version="0.1.0")
@@ -186,7 +186,7 @@ def clamp(value: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, value))
 
 
-def fetch_video_duration(url: str) -> float | None:
+def fetch_video_duration(url: str) -> Optional[float]:
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
@@ -203,13 +203,13 @@ def fetch_video_duration(url: str) -> float | None:
     return float(duration) if duration else None
 
 
-def choose_auto_top(duration: float | None) -> int:
+def choose_auto_top(duration: Optional[float]) -> int:
     if not duration:
         return MIN_AUTO_CLIPS + 3
     return clamp(ceil(duration / SECONDS_PER_TARGET_CLIP), MIN_AUTO_CLIPS, MAX_AUTO_CLIPS)
 
 
-def choose_auto_analyze_seconds(duration: float | None) -> float | None:
+def choose_auto_analyze_seconds(duration: Optional[float]) -> Optional[float]:
     if not duration or duration <= FULL_ANALYSIS_LIMIT_SECONDS:
         return None
     return min(MAX_AUTO_ANALYSIS_SECONDS, max(FULL_ANALYSIS_LIMIT_SECONDS, duration * LONG_VIDEO_ANALYSIS_RATIO))
@@ -338,7 +338,7 @@ def list_jobs() -> list[ClipJob]:
 
 
 @app.delete("/api/jobs")
-def delete_all_jobs() -> dict[str, str | int]:
+def delete_all_jobs() -> dict[str, Union[str, int]]:
     with jobs_lock:
         jobs.clear()
         save_jobs_unlocked()

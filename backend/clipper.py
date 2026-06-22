@@ -8,7 +8,7 @@ import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable, Literal
+from typing import Iterable, Literal, Optional, Union
 
 import imageio_ffmpeg
 from rich.console import Console
@@ -101,7 +101,7 @@ TRANSCRIPT_REPLACEMENTS = {
 }
 
 
-def run(command: list[str], cwd: Path | None = None) -> None:
+def run(command: list[str], cwd: Optional[Path] = None) -> None:
     process = subprocess.run(command, cwd=cwd, text=True)
     if process.returncode != 0:
         raise RuntimeError(f"Command failed with exit code {process.returncode}: {' '.join(command)}")
@@ -123,7 +123,7 @@ def clamp_even(value: float, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, bounded))
 
 
-def detect_person_focus_x(video_path: Path, clip: ClipCandidate) -> tuple[float, tuple[int, int]] | None:
+def detect_person_focus_x(video_path: Path, clip: ClipCandidate) -> Optional[tuple[float, tuple[int, int]]]:
     try:
         import cv2
     except Exception as exc:
@@ -348,7 +348,7 @@ def sanitize_metadata(info: dict) -> dict:
     return {key: info.get(key) for key in keys}
 
 
-def extract_audio(video_path: Path, audio_path: Path, force: bool = False, limit_seconds: float | None = None) -> Path:
+def extract_audio(video_path: Path, audio_path: Path, force: bool = False, limit_seconds: Optional[float] = None) -> Path:
     if audio_path.exists() and not force:
         return audio_path
 
@@ -500,7 +500,7 @@ def build_candidates(
     picked: list[ClipCandidate] = []
     remaining = candidates[:]
     while remaining and len(picked) < limit:
-        best: ClipCandidate | None = None
+        best: Optional[ClipCandidate] = None
         best_adjusted = -1_000.0
         for candidate in remaining:
             overlaps = any(not (candidate.end < item.start or candidate.start > item.end) for item in picked)
