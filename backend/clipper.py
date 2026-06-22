@@ -742,11 +742,12 @@ def print_candidates(candidates: list[ClipCandidate]) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Local YouTube auto clipper for short vertical videos.")
     parser.add_argument("url", help="YouTube URL")
+    parser.add_argument("--content-type", choices=["podcast", "football", "gaming"], default="podcast", help="Content type for scoring algorithm")
     parser.add_argument("--top", type=int, default=5, help="Number of clips to export")
     parser.add_argument("--min", type=float, default=35, help="Minimum clip duration in seconds")
     parser.add_argument("--max", type=float, default=180, help="Maximum clip duration in seconds")
     parser.add_argument("--model", default="Systran/faster-whisper-small", help="faster-whisper model name")
-    parser.add_argument("--language", default="id", help="Transcription language code")
+    parser.add_argument("--language", default="en", help="Transcription language code")
     parser.add_argument("--output", default="outputs", help="Output directory")
     parser.add_argument("--analyze-seconds", type=float, help="Only transcribe the first N seconds; useful for quick tests")
     parser.add_argument("--review-only", action="store_true", help="Stop after generating clip candidates")
@@ -798,7 +799,19 @@ def main() -> int:
     )
 
     console.print("[bold]Scoring candidate clips...[/bold]")
-    candidates = build_candidates(transcript, args.min, args.max, args.top)
+    
+    if args.content_type == "football":
+        from scorers.football import analyze_audio_energy, detect_excitement_peaks, build_football_candidates
+        
+        console.print("[bold]Analyzing audio energy for excitement peaks...[/bold]")
+        energy_timeline = analyze_audio_energy(audio_path)
+        excitement_peaks = detect_excitement_peaks(energy_timeline)
+        console.print(f"[green]Detected {len(excitement_peaks)} excitement peaks[/green]")
+        
+        candidates = build_football_candidates(transcript, excitement_peaks, args.min, args.max, args.top)
+    else:
+        candidates = build_candidates(transcript, args.min, args.max, args.top)
+    
     if not candidates:
         console.print("[red]No clip candidates found. Try lowering --min or increasing --max.[/red]")
         return 1
