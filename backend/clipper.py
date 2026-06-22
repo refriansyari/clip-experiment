@@ -326,6 +326,10 @@ def download_video(url: str, work_dir: Path, force: bool = False) -> tuple[Path,
         "noprogress": True,
         "no_warnings": True,
         "ffmpeg_location": ffmpeg_path(),
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        },
+        "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
     }
 
     work_dir.mkdir(parents=True, exist_ok=True)
