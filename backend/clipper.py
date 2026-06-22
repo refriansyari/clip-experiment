@@ -798,7 +798,28 @@ def main() -> int:
     )
 
     console.print("[bold]Scoring candidate clips...[/bold]")
-    candidates = build_candidates(transcript, args.min, args.max, args.top)
+    
+    if args.content_type == "football":
+        from scorers.football import analyze_audio_energy, detect_excitement_peaks, build_football_candidates
+        
+        console.print("[bold]Analyzing audio energy for excitement peaks...[/bold]")
+        energy_timeline = analyze_audio_energy(audio_path)
+        excitement_peaks = detect_excitement_peaks(energy_timeline)
+        console.print(f"[green]Detected {len(excitement_peaks)} excitement peaks[/green]")
+        
+        candidates = build_football_candidates(transcript, excitement_peaks, args.min, args.max, args.top)
+    elif args.content_type == "gaming":
+        from scorers.gaming import analyze_audio_energy, detect_action_moments, build_gaming_candidates
+        
+        console.print("[bold]Analyzing audio for gaming action moments...[/bold]")
+        energy_timeline = analyze_audio_energy(audio_path, window_size=1.0)
+        action_moments = detect_action_moments(energy_timeline, peak_threshold=1.2, min_distance_seconds=8.0)
+        console.print(f"[green]Detected {len(action_moments)} action moments[/green]")
+        
+        candidates = build_gaming_candidates(transcript, action_moments, args.min, args.max, args.top)
+    else:
+        candidates = build_candidates(transcript, args.min, args.max, args.top)
+    
     if not candidates:
         console.print("[red]No clip candidates found. Try lowering --min or increasing --max.[/red]")
         return 1
