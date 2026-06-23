@@ -98,8 +98,9 @@ def score_with_llm(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        max_tokens=1024,
+        max_tokens=2048,
         temperature=0.2,
+        response_format={"type": "json_object"},
     )
 
     raw_text = response.choices[0].message.content or ""
@@ -114,7 +115,8 @@ def score_with_llm(
     try:
         clips_data: list[dict] = json.loads(raw_text).get("clips", [])
     except (json.JSONDecodeError, AttributeError):
-        return []
+        # ponytail: surface the model's bad output instead of swallowing it
+        raise RuntimeError(f"LLM returned non-JSON response:\n{raw_text[:500]}")
 
     max_end = segments[-1].end if segments else 0.0
     candidates: list[ClipCandidate] = []
@@ -142,6 +144,13 @@ def score_with_llm(
                 reason=raw["reason"],
                 text=text,
             )
+        )
+
+    if clips_data and not candidates:
+        # ponytail: model returned clips but all fell outside min/max duration
+        raise RuntimeError(
+            f"LLM returned {len(clips_data)} clips but none fit {min_duration}-{max_duration}s. "
+            f"Durations: {[round(float(c.get('end', 0)) - float(c.get('start', 0)), 1) for c in clips_data]}"
         )
 
     candidates.sort(key=lambda c: c.score, reverse=True)
